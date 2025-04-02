@@ -8,7 +8,9 @@ import {
   Settings,
   User,
   FileDown,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -32,16 +34,16 @@ const Layout = ({ children }: LayoutProps) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <div 
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } bg-medytox-blue text-white transition-all duration-300 ease-in-out flex flex-col`}
+        } bg-medytox-red text-white transition-all duration-300 ease-in-out flex flex-col z-20 shadow-lg fixed h-full`}
       >
         {/* Logo */}
         <div className="p-4 flex items-center justify-center">
-          <div className={`${sidebarOpen ? "text-xl" : "text-sm"} font-bold`}>
+          <div className={`${sidebarOpen ? "text-xl" : "text-sm"} font-bold text-white`}>
             {sidebarOpen ? "Medytox DataShield" : "MDX"}
           </div>
         </div>
@@ -140,7 +142,7 @@ const Layout = ({ children }: LayoutProps) => {
               <User className="h-5 w-5 mr-2" />
               <div>
                 <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs opacity-70">{user.role.replace('_', ' ')}</p>
+                <p className="text-xs opacity-70 capitalize">{user.role}</p>
               </div>
             </div>
 
@@ -171,13 +173,24 @@ const Layout = ({ children }: LayoutProps) => {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-full bg-white/10 text-white hover:bg-white/20 border-white/20"
           >
-            {sidebarOpen ? "Collapse" : "Expand"}
+            {sidebarOpen ? (
+              <div className="flex items-center justify-center w-full">
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                <span>Collapse</span>
+              </div>
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      <div 
+        className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "ml-64" : "ml-20"
+        }`}
+      >
         {children}
       </div>
     </div>
