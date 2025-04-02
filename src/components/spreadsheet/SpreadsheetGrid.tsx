@@ -165,129 +165,130 @@ const SpreadsheetGrid = () => {
   };
 
   const getCellHistoryEntry = (rowIndex: number, colIndex: number) => {
-    return currentTable.rows[rowIndex]?.[colIndex]?.history || [];
+    const cell = currentTable.rows[rowIndex]?.[colIndex];
+    return cell?.history || [];
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{currentTable.name}</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={addRow}
-            className="flex items-center gap-1"
-          >
-            <Plus className="h-4 w-4" /> Add Row
-          </Button>
-          
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline"
-                className="flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" /> Add Column
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Column</DialogTitle>
-                <DialogDescription>
-                  Enter a name for the new column
-                </DialogDescription>
-              </DialogHeader>
-              <Input
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-                placeholder="Column Name"
-                className="mt-4"
-              />
-              <DialogFooter className="mt-4">
-                <Button onClick={handleAddColumn}>Add Column</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <div className="border rounded-lg overflow-x-auto">
-        <table className="w-full min-w-full divide-y divide-gray-200">
-          <thead className="bg-medytox-blue text-white">
-            <tr>
-              {/* Row number header */}
-              <th className="px-4 py-2 text-left w-14">#</th>
-              
-              {/* Column headers */}
-              {currentTable.headers.map((header, index) => (
-                <th key={index} className="px-4 py-2 text-left">{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {/* If the table has no rows, display a message */}
-            {currentTable.rows.length === 0 && (
-              <tr>
-                <td 
-                  colSpan={currentTable.headers.length + 1} 
-                  className="px-4 py-8 text-center text-gray-500"
-                >
-                  No data yet. Click "Add Row" to get started.
-                </td>
-              </tr>
-            )}
+    <TooltipProvider>
+      <div className="p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold">{currentTable.name}</h2>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={addRow}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add Row
+            </Button>
             
-            {/* Display the table rows */}
-            {currentTable.rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-gray-50">
-                {/* Row number */}
-                <td className="px-4 py-2 text-gray-500 font-medium border-r border-gray-200">
-                  {rowIndex + 1}
-                </td>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" /> Add Column
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Column</DialogTitle>
+                  <DialogDescription>
+                    Enter a name for the new column
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  value={newColumnName}
+                  onChange={(e) => setNewColumnName(e.target.value)}
+                  placeholder="Column Name"
+                  className="mt-4"
+                />
+                <DialogFooter className="mt-4">
+                  <Button onClick={handleAddColumn}>Add Column</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <div className="border rounded-lg overflow-x-auto">
+          <table className="w-full min-w-full divide-y divide-gray-200">
+            <thead className="bg-medytox-blue text-white">
+              <tr>
+                {/* Row number header */}
+                <th className="px-4 py-2 text-left w-14">#</th>
                 
-                {/* Row cells */}
-                {currentTable.headers.map((_, colIndex) => {
-                  const cell = row[colIndex];
-                  const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
-                  const canEdit = canEditCell(rowIndex, colIndex);
-                  const canView = canViewCell(rowIndex, colIndex);
+                {/* Column headers */}
+                {currentTable.headers.map((header, index) => (
+                  <th key={index} className="px-4 py-2 text-left">{header}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {/* If the table has no rows, display a message */}
+              {currentTable.rows.length === 0 && (
+                <tr>
+                  <td 
+                    colSpan={currentTable.headers.length + 1} 
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
+                    No data yet. Click "Add Row" to get started.
+                  </td>
+                </tr>
+              )}
+              
+              {/* Display the table rows */}
+              {currentTable.rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="hover:bg-gray-50">
+                  {/* Row number */}
+                  <td className="px-4 py-2 text-gray-500 font-medium border-r border-gray-200">
+                    {rowIndex + 1}
+                  </td>
                   
-                  if (!canView) {
+                  {/* Row cells */}
+                  {currentTable.headers.map((_, colIndex) => {
+                    const cell = row[colIndex];
+                    const isEditing = editingCell?.row === rowIndex && editingCell?.col === colIndex;
+                    const canEdit = canEditCell(rowIndex, colIndex);
+                    const canView = canViewCell(rowIndex, colIndex);
+                    
+                    if (!canView) {
+                      return (
+                        <td key={colIndex} className="px-4 py-2 border border-gray-200 bg-gray-100 text-gray-400">
+                          <div className="flex items-center justify-center">
+                            <Shield className="h-4 w-4 text-gray-400" />
+                            <span className="ml-2">No Access</span>
+                          </div>
+                        </td>
+                      );
+                    }
+                    
                     return (
-                      <td key={colIndex} className="px-4 py-2 border border-gray-200 bg-gray-100 text-gray-400">
-                        <div className="flex items-center justify-center">
-                          <Shield className="h-4 w-4 text-gray-400" />
-                          <span className="ml-2">No Access</span>
-                        </div>
-                      </td>
-                    );
-                  }
-                  
-                  return (
-                    <td 
-                      key={colIndex} 
-                      className={`px-4 py-2 border border-gray-200 relative ${
-                        cell?.confirmed ? 'bg-green-50' : ''
-                      } ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                      onClick={() => canEdit && handleCellClick(rowIndex, colIndex)}
-                    >
-                      {isEditing ? (
-                        <Input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onBlur={handleCellBlur}
-                          onKeyDown={handleKeyDown}
-                          autoFocus
-                          className="border-0 p-0 focus:ring-0 h-8"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <div>{getCellValue(cell)}</div>
-                          
-                          <div className="flex items-center">
-                            {/* Confirmed indicator */}
-                            {cell?.confirmed && (
-                              <TooltipProvider>
+                      <td 
+                        key={colIndex} 
+                        className={`px-4 py-2 border border-gray-200 relative ${
+                          cell?.confirmed ? 'bg-green-50' : ''
+                        } ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                        onClick={() => canEdit && handleCellClick(rowIndex, colIndex)}
+                      >
+                        {isEditing ? (
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleCellBlur}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            className="border-0 p-0 focus:ring-0 h-8"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>{getCellValue(cell)}</div>
+                            
+                            <div className="flex items-center">
+                              {/* Confirmed indicator */}
+                              {cell?.confirmed && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
@@ -300,12 +301,10 @@ const SpreadsheetGrid = () => {
                                     )}
                                   </TooltipContent>
                                 </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            
-                            {/* Locked indicator */}
-                            {!canEdit && canView && (
-                              <TooltipProvider>
+                              )}
+                              
+                              {/* Locked indicator */}
+                              {!canEdit && canView && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Lock className="h-4 w-4 text-gray-400 ml-2" />
@@ -314,121 +313,121 @@ const SpreadsheetGrid = () => {
                                     You don't have permission to edit this cell
                                   </TooltipContent>
                                 </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            
-                            {/* Cell actions menu */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 text-gray-400">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Cell Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                
-                                {/* History action */}
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openCellHistory(rowIndex, colIndex);
-                                  }}
-                                >
-                                  <History className="h-4 w-4 mr-2" />
-                                  View History
-                                </DropdownMenuItem>
-                                
-                                {/* Confirm action (if user has permission) */}
-                                {user?.permissions.includes('confirm_data') && !cell?.confirmed && (
+                              )}
+                              
+                              {/* Cell actions menu */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 text-gray-400">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Cell Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* History action */}
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleConfirmCell(rowIndex, colIndex);
+                                      openCellHistory(rowIndex, colIndex);
                                     }}
                                   >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Confirm Cell
+                                    <History className="h-4 w-4 mr-2" />
+                                    View History
                                   </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  
+                                  {/* Confirm action (if user has permission) */}
+                                  {user?.permissions.includes('confirm_data') && !cell?.confirmed && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleConfirmCell(rowIndex, colIndex);
+                                      }}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Confirm Cell
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Cell Confirm Dialog */}
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Cell Data</DialogTitle>
+              <DialogDescription>
+                Confirming this data will lock it from future edits. This action is recorded in the audit trail.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <Textarea
+                placeholder="Add optional comments about this confirmation"
+                value={confirmComment}
+                onChange={(e) => setConfirmComment(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+              <Button onClick={handleConfirmSubmit}>Confirm Cell</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Cell History Dialog */}
+        <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Cell Edit History</DialogTitle>
+              <DialogDescription>
+                View the history of changes made to this cell
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="max-h-80 overflow-y-auto">
+              {selectedCell && (
+                <div className="space-y-2">
+                  {getCellHistoryEntry(selectedCell.row, selectedCell.col).length === 0 ? (
+                    <p className="text-gray-500 py-4">No edit history available for this cell.</p>
+                  ) : (
+                    getCellHistoryEntry(selectedCell.row, selectedCell.col).map((entry, i) => (
+                      <div key={i} className="border rounded p-3 bg-gray-50">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Previous Value:</span>
+                          <span>{entry.value !== null && entry.value !== undefined ? String(entry.value) : '(empty)'}</span>
                         </div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                        <div className="text-sm text-gray-500 mt-1">
+                          Changed by: User ID {entry.userId} at {formatDateTime(entry.timestamp)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button onClick={() => setHistoryDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      {/* Cell Confirm Dialog */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Cell Data</DialogTitle>
-            <DialogDescription>
-              Confirming this data will lock it from future edits. This action is recorded in the audit trail.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <Textarea
-              placeholder="Add optional comments about this confirmation"
-              value={confirmComment}
-              onChange={(e) => setConfirmComment(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button onClick={handleConfirmSubmit}>Confirm Cell</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Cell History Dialog */}
-      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Cell Edit History</DialogTitle>
-            <DialogDescription>
-              View the history of changes made to this cell
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="max-h-80 overflow-y-auto">
-            {selectedCell && (
-              <div className="space-y-2">
-                {getCellHistoryEntry(selectedCell.row, selectedCell.col).length === 0 ? (
-                  <p className="text-gray-500 py-4">No edit history available for this cell.</p>
-                ) : (
-                  getCellHistoryEntry(selectedCell.row, selectedCell.col).map((entry, i) => (
-                    <div key={i} className="border rounded p-3 bg-gray-50">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Previous Value:</span>
-                        <span>{entry.value !== null && entry.value !== undefined ? String(entry.value) : '(empty)'}</span>
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        Changed by: User ID {entry.userId} at {formatDateTime(entry.timestamp)}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button onClick={() => setHistoryDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </TooltipProvider>
   );
 };
 

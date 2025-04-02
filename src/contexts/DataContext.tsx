@@ -6,6 +6,13 @@ import { toast } from 'sonner';
 
 // Define cell data types
 export type CellValue = string | number | boolean | null;
+
+export type CellHistoryEntry = {
+  value: CellValue;
+  timestamp: Date;
+  userId: string;
+};
+
 export type CellPermissions = {
   roles: string[];
   editable: boolean;
@@ -19,11 +26,7 @@ export type Cell = {
   confirmedAt?: Date;
   confirmedComments?: string;
   permissions?: CellPermissions;
-  history: {
-    value: CellValue;
-    timestamp: Date;
-    userId: string;
-  }[];
+  history: CellHistoryEntry[];
 };
 
 // Define table data type
@@ -31,7 +34,7 @@ export type TableData = {
   id: string;
   name: string;
   headers: string[];
-  rows: Record<string, Cell>[][];
+  rows: Cell[][];
   confirmed: boolean;
   confirmedBy?: string;
   confirmedAt?: Date;
@@ -138,7 +141,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     // Create history entry for the previous value
-    const historyEntry = {
+    const historyEntry: CellHistoryEntry = {
       value: currentCell.value,
       timestamp: new Date(),
       userId: user.id
@@ -272,7 +275,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentTable || !user) return;
     
     // Create a new empty row
-    const newRow = Array(currentTable.headers.length).fill(null).map(() => ({
+    const newRow: Cell[] = Array(currentTable.headers.length).fill(null).map(() => ({
       value: null,
       confirmed: false,
       history: []
@@ -375,7 +378,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Check if the current user can edit a specific cell
-  const canEditCell = (rowIndex: number, colIndex: number) => {
+  const canEditCell = (rowIndex: number, colIndex: number): boolean => {
     if (!currentTable || !user) return false;
     
     // Admins can edit anything
@@ -396,7 +399,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Check if the current user can view a specific cell
-  const canViewCell = (rowIndex: number, colIndex: number) => {
+  const canViewCell = (rowIndex: number, colIndex: number): boolean => {
     if (!currentTable || !user) return false;
     
     // Admins can view anything
