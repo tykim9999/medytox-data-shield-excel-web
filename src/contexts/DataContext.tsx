@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useAudit } from './AuditContext';
@@ -46,7 +45,7 @@ export type TableData = {
 interface DataContextType {
   tables: TableData[];
   currentTable: TableData | null;
-  createTable: (name: string, headers: string[]) => void;
+  createTable: (name: string, headers: string[], initialRows?: number) => void;
   selectTable: (id: string) => void;
   updateCell: (rowIndex: number, colIndex: number, value: CellValue) => boolean;
   confirmCell: (rowIndex: number, colIndex: number, comments?: string) => void;
@@ -73,14 +72,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const currentTable = tables.find(table => table.id === currentTableId) || null;
 
   // Create a new table
-  const createTable = (name: string, headers: string[]) => {
+  const createTable = (name: string, headers: string[], initialRows: number = 10) => {
     if (!user) return;
+
+    // Create empty rows with the specified number of initial rows
+    const emptyRows: Cell[][] = Array.from({ length: initialRows }, () => 
+      headers.map(() => ({
+        value: null,
+        confirmed: false,
+        history: []
+      }))
+    );
+
+    // Assign some default permissions based on column for demo purposes
+    // This simulates a scenario where different columns have different access roles in Medytox
+    const rows = emptyRows.map(row => 
+      row.map((cell, colIndex) => ({
+        ...cell,
+        permissions: colIndex % 3 === 0 ? 
+          { roles: ['admin', 'dp_team'], editable: true, viewable: true } : 
+          colIndex % 3 === 1 ?
+            { roles: ['admin', 'dp_team', 'qa_team'], editable: true, viewable: true } :
+            { roles: ['admin', 'qa_team'], editable: false, viewable: true }
+      }))
+    );
 
     const newTable: TableData = {
       id: crypto.randomUUID(),
       name,
       headers,
-      rows: [],
+      rows,
       confirmed: false,
       version: 1
     };
@@ -89,9 +110,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentTableId(newTable.id);
 
     addLog('create', 'table', `Created new table: ${name}`);
-    toast.success(`Table "${name}" created successfully`);
+    toast.success(`Table "${name}" created successfully with ${initialRows} empty rows`);
   };
-
+  
   // Select a table
   const selectTable = (id: string) => {
     const table = tables.find(table => table.id === id);

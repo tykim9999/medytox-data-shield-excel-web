@@ -64,10 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				medytox: {
-					blue: '#1E40AF',
-					light: '#3B82F6',
-					lightest: '#BFDBFE',
-					gray: '#E5E7EB'
+					red: '#ea384c',
+					light: '#ff5a6e',
+					lightest: '#ffccd2',
+					gray: '#E5E7EB',
+					blue: '#1E40AF'
 				}
 			},
 			borderRadius: {

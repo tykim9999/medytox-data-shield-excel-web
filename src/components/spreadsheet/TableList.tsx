@@ -26,6 +26,7 @@ const TableList = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [columnInputs, setColumnInputs] = useState<string[]>(['']);
+  const [initialRows, setInitialRows] = useState(10);
 
   const handleAddColumn = () => {
     setColumnInputs([...columnInputs, '']);
@@ -55,22 +56,23 @@ const TableList = () => {
       return;
     }
 
-    createTable(newTableName, validColumns);
+    createTable(newTableName, validColumns, initialRows);
     
     // Reset form
     setNewTableName('');
     setColumnInputs(['']);
+    setInitialRows(10);
     setIsCreateDialogOpen(false);
   };
 
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Your Spreadsheets</h2>
+        <h2 className="text-2xl font-bold text-medytox-red">Your Spreadsheets</h2>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 bg-medytox-red hover:bg-medytox-red/80">
               <Plus className="h-4 w-4" />
               New Spreadsheet
             </Button>
@@ -129,10 +131,24 @@ const TableList = () => {
                   Add Another Column
                 </Button>
               </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="initial-rows" className="text-sm font-medium">
+                  Initial Number of Rows
+                </label>
+                <Input
+                  id="initial-rows"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={initialRows}
+                  onChange={(e) => setInitialRows(Number(e.target.value))}
+                />
+              </div>
             </div>
             
             <DialogFooter>
-              <Button onClick={handleCreateTable}>
+              <Button onClick={handleCreateTable} className="bg-medytox-red hover:bg-medytox-red/80">
                 Create Spreadsheet
               </Button>
             </DialogFooter>
@@ -144,12 +160,12 @@ const TableList = () => {
         {tables.length === 0 ? (
           <Card className="col-span-full bg-gray-50 border-dashed border-2">
             <CardContent className="flex flex-col items-center justify-center h-40">
-              <FileSpreadsheet className="h-10 w-10 text-gray-400 mb-2" />
+              <FileSpreadsheet className="h-10 w-10 text-medytox-red mb-2" />
               <p className="text-gray-500 mb-4">No spreadsheets yet</p>
               <Button 
                 variant="outline" 
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-medytox-red border-medytox-red hover:bg-medytox-red/10"
               >
                 <Plus className="h-4 w-4" />
                 Create Your First Spreadsheet
@@ -160,7 +176,7 @@ const TableList = () => {
           tables.map((table) => (
             <Card 
               key={table.id} 
-              className="cursor-pointer hover:border-medytox-blue transition-all"
+              className="cursor-pointer hover:border-medytox-red transition-all"
               onClick={() => selectTable(table.id)}
             >
               <CardHeader>
@@ -182,7 +198,7 @@ const TableList = () => {
                       </span>
                     )}
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="text-medytox-red border-medytox-red hover:bg-medytox-red/10">
                     Open
                   </Button>
                 </div>
