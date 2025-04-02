@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useData, type Cell, type CellValue, type TableData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -136,8 +135,13 @@ const SpreadsheetGrid = () => {
       });
       return;
     }
+    
+    // Get the current cell value
+    const cell = currentTable.rows[rowIndex]?.[colIndex];
+    
+    // Set editing state
     setEditingCell({ row: rowIndex, col: colIndex });
-    setCurrentValue(currentTable.rows[rowIndex]?.[colIndex]?.value || null);
+    setCurrentValue(cell?.value ?? null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,12 +153,13 @@ const SpreadsheetGrid = () => {
       handleCellBlur(rowIndex, colIndex);
     } else if (e.key === 'Escape') {
       setEditingCell(null);
-      setCurrentValue(currentTable.rows[rowIndex]?.[colIndex]?.value || null);
+      setCurrentValue(null);
     }
   };
 
   const handleCellBlur = (rowIndex: number, colIndex: number) => {
-    if (editingCell && currentValue !== null) {
+    if (editingCell) {
+      // Update the cell value in the data context
       const success = updateCell(rowIndex, colIndex, currentValue);
       
       if (success) {
@@ -165,6 +170,7 @@ const SpreadsheetGrid = () => {
       }
     }
     
+    // Reset editing state
     setEditingCell(null);
   };
 
@@ -317,20 +323,25 @@ const SpreadsheetGrid = () => {
                     <TableRow key={rowIndex}>
                       <TableCell className="font-medium">{rowIndex + 1}</TableCell>
                       {row.map((cell, colIndex) => (
-                        <TableCell key={colIndex} className={cell.confirmed ? "bg-green-50" : ""}>
+                        <TableCell 
+                          key={colIndex} 
+                          className={cell.confirmed ? "bg-green-50" : ""}
+                          onClick={() => handleCellClick(rowIndex, colIndex)}
+                        >
                           {editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
                             <Input
                               ref={inputRef}
                               type="text"
-                              value={currentValue === null ? '' : currentValue.toString()}
+                              value={currentValue === null ? '' : String(currentValue)}
                               onChange={handleInputChange}
                               onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
                               onBlur={() => handleCellBlur(rowIndex, colIndex)}
+                              autoFocus
                             />
                           ) : (
                             <div className="flex items-center">
                               <span className={cell.confirmed ? "font-medium" : ""}>
-                                {cell.value === null ? '' : cell.value}
+                                {cell.value === null ? '' : String(cell.value)}
                               </span>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
