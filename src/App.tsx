@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+// Remove the Sonner import as we're focusing on one toast system
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -91,7 +91,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <Toaster />
-      <Sonner />
       <AppWithProviders />
     </BrowserRouter>
   </QueryClientProvider>

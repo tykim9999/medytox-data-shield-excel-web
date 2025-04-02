@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useData, type Cell, type CellValue, type TableData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -42,7 +40,7 @@ import {
   Save,
   Calculator
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from "@/hooks/use-toast";  // Changed to use the fixed hook
 import StatisticsPanel from '@/components/analysis/StatisticsPanel';
 import ControlChartPanel from '@/components/analysis/ControlChartPanel';
 
@@ -157,7 +155,10 @@ const SpreadsheetGrid = () => {
       const success = updateCell(row, col, parsedValue);
       
       if (success) {
-        toast.success("Cell updated successfully");
+        toast({
+          title: "Updated",
+          description: "Cell updated successfully"
+        });
       }
       
       setEditingCell(null);
@@ -221,7 +222,11 @@ const SpreadsheetGrid = () => {
       addColumn(newColumnName);
       setNewColumnName('');
     } else {
-      toast.error("Column name cannot be empty");
+      toast({
+        title: "Error",
+        description: "Column name cannot be empty",
+        variant: "destructive"
+      });
     }
   };
 
@@ -327,8 +332,13 @@ const SpreadsheetGrid = () => {
   };
 
   const handleExportToReport = () => {
-    toast.success("Generating report... Check Downloads folder");
-    toast.info("Report includes spreadsheet data, control charts, and statistical analysis");
+    toast({
+      title: "Success",
+      description: "Generating report... Check Downloads folder"
+    });
+    toast({
+      description: "Report includes spreadsheet data, control charts, and statistical analysis"
+    });
   };
 
   return (
