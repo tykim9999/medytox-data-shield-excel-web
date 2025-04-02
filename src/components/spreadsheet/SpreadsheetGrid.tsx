@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useData, type Cell, type CellValue, type TableData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -40,7 +42,7 @@ import {
   Save,
   Calculator
 } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";  // Changed to use the fixed hook
+import { useToast } from "@/hooks/use-toast";
 import StatisticsPanel from '@/components/analysis/StatisticsPanel';
 import ControlChartPanel from '@/components/analysis/ControlChartPanel';
 
