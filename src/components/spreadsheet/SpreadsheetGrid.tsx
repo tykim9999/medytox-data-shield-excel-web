@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useData, type Cell, type CellValue, type TableData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,15 +86,7 @@ const parseNumber = (value: CellValue): number | null => {
   return null;
 };
 
-// Initial table data (10x10)
-const initialTableData: TableData = {
-  rows: Array(10).fill(null).map(() =>
-    Array(10).fill({ value: null, locked: false })
-  ),
-};
-
-const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
-  const [tableData, setTableData] = useState<TableData>(initialTableData);
+const SpreadsheetGrid = () => {
   const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
   const [currentValue, setCurrentValue] = useState<CellValue | null>(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -102,19 +95,19 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
   const tableRef = useRef<HTMLTableElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { updateTableData, getTableData, confirmTableData } = useData();
+  const { 
+    currentTable, 
+    updateCell, 
+    confirmCell, 
+    confirmTable, 
+    addRow, 
+    addColumn,
+    exportTableToPDF,
+    canEditCell
+  } = useData();
   const { user } = useAuth();
   const { addLog } = useAudit();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const storedData = getTableData(tableId);
-    if (storedData) {
-      setTableData(storedData);
-    } else {
-      setTableData(initialTableData);
-    }
-  }, [tableId, getTableData]);
 
   useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -122,10 +115,29 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
     }
   }, [editingCell]);
 
+  // Make sure currentTable is available
+  if (!currentTable) {
+    return (
+      <Card>
+        <CardContent className="p-8 flex flex-col items-center justify-center">
+          <p className="text-lg text-gray-500">No table selected.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const handleCellClick = (rowIndex: number, colIndex: number) => {
-    if (isLocked || tableData.rows[rowIndex][colIndex].locked) return;
+    // Check cell permissions using canEditCell from context
+    if (!canEditCell(rowIndex, colIndex)) {
+      toast({
+        title: "Cannot edit cell",
+        description: "You don't have permission to edit this cell",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingCell({ row: rowIndex, col: colIndex });
-    setCurrentValue(tableData.rows[rowIndex][colIndex].value);
+    setCurrentValue(currentTable.rows[rowIndex]?.[colIndex]?.value || null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,138 +149,86 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
       handleCellBlur(rowIndex, colIndex);
     } else if (e.key === 'Escape') {
       setEditingCell(null);
-      setCurrentValue(tableData.rows[rowIndex][colIndex].value);
+      setCurrentValue(currentTable.rows[rowIndex]?.[colIndex]?.value || null);
     }
   };
 
   const handleCellBlur = (rowIndex: number, colIndex: number) => {
     if (editingCell && currentValue !== null) {
-      const parsedNumber = parseNumber(currentValue);
-      if (parsedNumber === null && typeof currentValue === 'string' && currentValue.trim() !== '' && isNaN(Number(currentValue))) {
-        toast({
-          title: "Invalid input",
-          description: "Only numbers are allowed",
-          variant: "destructive",
-        });
-        setEditingCell(null);
-        return;
-      }
-
-      const updatedTableData = {
-        ...tableData,
-        rows: tableData.rows.map((row, i) =>
-          i === rowIndex
-            ? row.map((cell, j) => (j === colIndex ? { ...cell, value: parsedNumber !== null ? parsedNumber : currentValue } : cell))
-            : row
-        ),
-      };
-
-      setTableData(updatedTableData);
-      updateTableData(tableId, updatedTableData);
-      addLog('update', 'spreadsheet', `Cell [${rowIndex + 1}, ${String.fromCharCode(65 + colIndex)}] updated to ${currentValue}`);
+      const success = updateCell(rowIndex, colIndex, currentValue);
       
-      toast({
-        title: "Cell updated",
-        description: `Cell [${rowIndex + 1}, ${String.fromCharCode(65 + colIndex)}] updated to ${currentValue}`,
-      });
+      if (success) {
+        toast({
+          title: "Cell updated",
+          description: `Cell [${rowIndex + 1}, ${getColumnName(colIndex)}] updated to ${currentValue}`,
+        });
+      }
     }
     
     setEditingCell(null);
   };
 
   const handleAddRow = () => {
-    const newRow: Cell[] = Array(tableData.rows[0].length).fill({ value: null, locked: false });
-    const updatedTableData: TableData = {
-      ...tableData,
-      rows: [...tableData.rows, newRow],
-    };
-    setTableData(updatedTableData);
-    updateTableData(tableId, updatedTableData);
+    addRow();
     addLog('create', 'spreadsheet', 'New row added');
+    toast({
+      title: "Row added",
+      description: "A new row has been added to the table",
+    });
   };
 
   const handleAddColumn = () => {
-    const updatedTableData: TableData = {
-      ...tableData,
-      rows: tableData.rows.map(row => [...row, { value: null, locked: false }]),
-    };
-    setTableData(updatedTableData);
-    updateTableData(tableId, updatedTableData);
-    addLog('create', 'spreadsheet', 'New column added');
+    // Show a dialog to enter the column name
+    const columnName = prompt("Enter column name:", "");
+    if (columnName) {
+      addColumn(columnName);
+      addLog('create', 'spreadsheet', 'New column added');
+      toast({
+        title: "Column added",
+        description: `New column "${columnName}" has been added to the table`,
+      });
+    }
   };
 
-  const handleLockCell = (rowIndex: number, colIndex: number) => {
-    const updatedTableData: TableData = {
-      ...tableData,
-      rows: tableData.rows.map((row, i) =>
-        i === rowIndex
-          ? row.map((cell, j) => (j === colIndex ? { ...cell, locked: !cell.locked } : cell))
-          : row
-      ),
-    };
-    setTableData(updatedTableData);
-    updateTableData(tableId, updatedTableData);
-    addLog('update', 'spreadsheet', `Cell [${rowIndex + 1}, ${String.fromCharCode(65 + colIndex)}] locked/unlocked`);
+  const handleConfirmCell = (rowIndex: number, colIndex: number) => {
+    confirmCell(rowIndex, colIndex);
+    addLog('update', 'spreadsheet', `Cell [${rowIndex + 1}, ${getColumnName(colIndex)}] confirmed`);
+    toast({
+      title: "Cell confirmed",
+      description: `Cell [${rowIndex + 1}, ${getColumnName(colIndex)}] has been confirmed`,
+    });
   };
 
   const handleExportToCSV = () => {
-    const csvRows = tableData.rows.map(row =>
-      row.map(cell => cell.value).join(',')
+    // Create a CSV string from the current table data
+    const csvRows = currentTable.rows.map(row =>
+      row.map(cell => cell.value === null ? '' : cell.value).join(',')
     );
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join('\n');
+    const csvContent = "data:text/csv;charset=utf-8," + currentTable.headers.join(',') + '\n' + csvRows.join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "spreadsheet_data.csv");
+    link.setAttribute("download", `${currentTable.name}.csv`);
     document.body.appendChild(link); // Required for Firefox
     link.click();
     addLog('export', 'spreadsheet', 'Table exported to CSV');
+    toast({
+      title: "CSV exported",
+      description: "Your spreadsheet has been exported as a CSV file",
+    });
   };
 
   const handleExportToReport = () => {
-    const reportContent = `
-      <h1>Spreadsheet Report</h1>
-      <p>Table ID: ${tableId}</p>
-      <table>
-        <thead>
-          <tr>
-            ${tableData.rows[0].map((_, index) => `<th>${getColumnName(index)}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${tableData.rows.map(row => `
-            <tr>
-              ${row.map(cell => `<td>${cell.value === null ? '' : cell.value}</td>`).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `spreadsheet_report_${tableId}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
+    // Use the context method instead
+    exportTableToPDF();
     toast({
       title: "Report generated",
-      description: "The report has been successfully generated",
+      description: "The PDF report has been successfully generated",
     });
-    
-    addLog('export', 'spreadsheet', 'Table exported to HTML report');
   };
 
-  const saveChanges = () => {
-    updateTableData(tableId, tableData);
-    addLog('update', 'spreadsheet', 'Table saved');
-  };
-
-  const confirmChanges = () => {
-    confirmTableData(tableId);
+  const handleConfirmTable = () => {
+    confirmTable();
     setIsLocked(true);
     addLog('confirm', 'spreadsheet', 'Table confirmed and locked');
     
@@ -282,8 +242,10 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Spreadsheet</CardTitle>
-          <CardDescription>Manage and analyze your data</CardDescription>
+          <div>
+            <CardTitle>{currentTable.name}</CardTitle>
+            <CardDescription>Manage and analyze your data</CardDescription>
+          </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={handleExportToCSV}>
               <Download className="mr-2 h-4 w-4" />
@@ -291,7 +253,7 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportToReport}>
               <Share2 className="mr-2 h-4 w-4" />
-              Export Report
+              Export PDF
             </Button>
             {user?.role === 'admin' && (
               <Dialog>
@@ -308,16 +270,20 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
                       Explore various analysis options for your spreadsheet data.
                     </DialogDescription>
                   </DialogHeader>
-                  <Tabs defaultvalue="statistics" className="w-full">
+                  <Tabs defaultValue="statistics" className="w-full">
                     <TabsList>
                       <TabsTrigger value="statistics">Statistics</TabsTrigger>
                       <TabsTrigger value="controlChart">Control Chart</TabsTrigger>
                     </TabsList>
                     <TabsContent value="statistics">
-                      <StatisticsPanel tableData={tableData} />
+                      <div className="p-4 bg-gray-50 rounded-md">
+                        <p>Statistics analysis would be shown here</p>
+                      </div>
                     </TabsContent>
                     <TabsContent value="controlChart">
-                      <ControlChartPanel tableData={tableData} />
+                      <div className="p-4 bg-gray-50 rounded-md">
+                        <p>Control chart analysis would be shown here</p>
+                      </div>
                     </TabsContent>
                   </Tabs>
                   <DialogFooter>
@@ -341,17 +307,17 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead />
-                    {tableData.rows[0].map((_, colIndex) => (
-                      <TableHead key={colIndex}>{getColumnName(colIndex)}</TableHead>
+                    {currentTable.headers.map((header, colIndex) => (
+                      <TableHead key={colIndex}>{header}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tableData.rows.map((row, rowIndex) => (
+                  {currentTable.rows.map((row, rowIndex) => (
                     <TableRow key={rowIndex}>
                       <TableCell className="font-medium">{rowIndex + 1}</TableCell>
                       {row.map((cell, colIndex) => (
-                        <TableCell key={colIndex}>
+                        <TableCell key={colIndex} className={cell.confirmed ? "bg-green-50" : ""}>
                           {editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
                             <Input
                               ref={inputRef}
@@ -363,7 +329,9 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
                             />
                           ) : (
                             <div className="flex items-center">
-                              {cell.value === null ? '' : cell.value}
+                              <span className={cell.confirmed ? "font-medium" : ""}>
+                                {cell.value === null ? '' : cell.value}
+                              </span>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" className="ml-2 h-4 w-4 p-0">
@@ -373,14 +341,16 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleLockCell(rowIndex, colIndex)}>
-                                    <Lock className="mr-2 h-4 w-4" />
-                                    {cell.locked ? 'Unlock' : 'Lock'}
-                                  </DropdownMenuItem>
+                                  {canEditCell(rowIndex, colIndex) && !cell.confirmed && (
+                                    <DropdownMenuItem onClick={() => handleConfirmCell(rowIndex, colIndex)}>
+                                      <Lock className="mr-2 h-4 w-4" />
+                                      Confirm
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem>
                                     <Eye className="mr-2 h-4 w-4" />
-                                    View
+                                    View History
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -395,24 +365,43 @@ const SpreadsheetGrid = ({ tableId }: { tableId: string }) => {
             </div>
           </TabsContent>
           <TabsContent value="settings">
-            <div>
-              <p>Customize your spreadsheet settings here.</p>
-              <Button onClick={handleAddRow}>Add Row</Button>
-              <Button onClick={handleAddColumn}>Add Column</Button>
-              <Button onClick={saveChanges}>Save Changes</Button>
-              <Button disabled={isLocked} onClick={confirmChanges}>
-                {isLocked ? (
-                  <>
-                    <Lock className="mr-2 h-4 w-4" />
-                    Confirmed
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Confirm
-                  </>
-                )}
-              </Button>
+            <div className="space-y-4 p-4">
+              <h3 className="text-lg font-medium">Spreadsheet Settings</h3>
+              <div className="flex space-x-4">
+                <Button onClick={handleAddRow}>Add Row</Button>
+                <Button onClick={handleAddColumn}>Add Column</Button>
+                <Button 
+                  onClick={handleConfirmTable} 
+                  disabled={currentTable.confirmed} 
+                  className="ml-auto"
+                >
+                  {currentTable.confirmed ? (
+                    <>
+                      <Lock className="mr-2 h-4 w-4" />
+                      Confirmed
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Confirm Table
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {currentTable.confirmed && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-4">
+                  <p className="text-green-800">
+                    This table was confirmed by {currentTable.confirmedBy || "a user"} 
+                    {currentTable.confirmedAt && ` on ${new Date(currentTable.confirmedAt).toLocaleString()}`}
+                  </p>
+                  {currentTable.confirmedComments && (
+                    <p className="text-green-700 mt-2">
+                      Comments: {currentTable.confirmedComments}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
