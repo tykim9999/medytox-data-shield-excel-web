@@ -37,7 +37,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div 
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } bg-medytox-blue text-white transition-all duration-300 ease-in-out flex flex-col`}
+        } bg-medytox-red text-white transition-all duration-300 ease-in-out flex flex-col`}
       >
         {/* Logo */}
         <div className="p-4 flex items-center justify-center">

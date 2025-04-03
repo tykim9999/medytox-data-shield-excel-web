@@ -33,7 +33,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-medytox-blue">Medytox DataShield</h1>
+          <h1 className="text-3xl font-bold text-medytox-red">Medytox DataShield</h1>
           <p className="mt-2 text-gray-600">Secure Data Analysis System</p>
         </div>
 
@@ -70,7 +70,7 @@ const Login = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full bg-medytox-red text-white" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
